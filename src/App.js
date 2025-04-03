@@ -1,25 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import LatexRenderer from "./components/LatexRenderer";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1 style={styles.title}>euclid</h1>
+      <LatexRenderer />
     </div>
   );
 }
+
+const styles = {
+  title: {
+    fontSize : '2em',
+    padding: '5px',
+    marginLeft: '20px'
+  }
+};
 
 export default App;
