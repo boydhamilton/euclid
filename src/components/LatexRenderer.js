@@ -11,8 +11,9 @@ const LatexRenderer = () => {
     const results = lines.map((line) => {
       try {
         if (!line.trim()) return "";
-        if (evaluateLatexExpression(line) == "") return "";
-        return `= ${evaluateLatexExpression(line)}`;
+        const result = evaluateLatexExpression(line);
+        if (result === null || result === undefined) return "";
+        return `= ${result}`;
       } catch (error) {
         return "";
       }
@@ -35,14 +36,14 @@ const LatexRenderer = () => {
         });
         return;
       }
-      
+
       if (e.key === "Enter") {
         setLatexLines((prev) => [...prev, ""]);
         return;
       }
-      
+
       if (!/^[a-zA-Z0-9\\{}._^+\-*/=()\[\] ]$/.test(e.key)) return;
-      
+
       setLatexLines((prev) => {
         let newLines = [...prev];
         newLines[newLines.length - 1] += e.key;
@@ -61,21 +62,19 @@ const LatexRenderer = () => {
     <div style={styles.container}>
       {latexLines.map((line, index) => (
         <div key={index} style={styles.lineContainer}>
-          
-          <div style={styles.latexContainer}>  {/* Underline only under LaTeX */}
+          <div style={styles.latexContainer}>
             <BlockMath math={line} />
           </div>
-  
-          {/* Only render result if it's a valid expression (not empty or error) */}
-          {evaluationResults[index] && evaluationResults[index] !== "" && (
+
+          {evaluationResults[index] !== "" && 
+          evaluationResults[index] !== null && 
+          evaluationResults[index] !== undefined &&(
             <div style={styles.resultDisplay}>{evaluationResults[index]}</div>
           )}
-  
         </div>
       ))}
     </div>
   );
-    
 };
 
 const styles = {
@@ -96,7 +95,7 @@ const styles = {
   },
   latexContainer: {
     paddingBottom: "5px",
-    borderBottom: "2px solid #d3d3d3",  // Underline applied ONLY to LaTeX expression
+    borderBottom: "2px solid #d3d3d3",
   },
   resultDisplay: {
     fontSize: "1.2em",
