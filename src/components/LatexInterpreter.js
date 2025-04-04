@@ -1,21 +1,27 @@
-import { evaluate } from "mathjs";
+import { evaluate, derivative } from "mathjs";
 
 export const convertToEvaluatable = (latex) => {
   let result = latex;
 
-  result = result.replace(/\\^{([^}]+)}/g, "^($1)");
+  result = result.replace(/\\pi/g, "pi");
+  result = result.replace(/\^{([^}]+)}/g, "^($1)");
 
-  result = result.replace(/\\cdot/g, "*");
   result = result.replace(/\\frac{([^}]+)}{([^}]+)}/g, "($1)/($2)");
   result = result.replace(/\\sqrt{([^}]+)}/g, "sqrt($1)");
 
+
+  // Replace trig
   result = result.replace(/\\sin\s*\(([^)]+)\)/g, "sin($1)");
   result = result.replace(/\\cos\s*\(([^)]+)\)/g, "cos($1)");
   result = result.replace(/\\tan\s*\(([^)]+)\)/g, "tan($1)");
+  result = result.replace(/\\csc\s*\(([^)]+)\)/g, "(1/sin($1))");
+  result = result.replace(/\\sec\s*\(([^)]+)\)/g, "(1/cos($1))");
+  result = result.replace(/\\cot\s*\(([^)]+)\)/g, "(1/tan($1))");
 
   // multiplication handling
-  result = result.replace(/(\d)([a-zA-Z\(])/g, '$1*$2');
-  result = result.replace(/([a-zA-Z\)])(\d)/g, '$1*$2');
+  result = result.replace(/\\cdot/g, "*");
+  result = result.replace(/(\d)([A-z])/g, '$1*$2');
+  result = result.replace(/([A-z])(\d)/g, '$1*$2');
   result = result.replace(/\)\s*(\d+)/g, (match, digits) => `)*${digits}`);
   result = result.replace(/\)(\d+)/g, (match, digits) => `)*${digits}`);
 
@@ -23,6 +29,13 @@ export const convertToEvaluatable = (latex) => {
 };
 
 export const evaluateLatexExpression = (latex) => {
+  // Match derivative expressions: d/dx f(x)
+  let derivativeMatch = latex.match(/d\/d([A-z])\((.*)\)/);
+  if (derivativeMatch) {
+    let [, variable, expression] = derivativeMatch;
+    return evaluateDerivative(variable, expression);
+  }
+
   // Match summation expressions: \sum_{i=a}^{b} f(i)
   let sumMatch = latex.match(/\\sum_{([a-z])=([\d.-]+)}\^{([\d.-]+)}\s*(.*)/);
   if (sumMatch) {
@@ -106,9 +119,11 @@ const evaluateIntegral = (variable, start, end, expression, N = 100) => {
   for (let i = 1; i < N; i++) {
     const x = start + i * dx;
     const fx = evaluateAt(x);
+
     if (isNaN(fx)) {
       return `Error: Cannot evaluate function at x = ${x}.`;
     }
+
     if (i % 2 === 0) {
       integral += 2 * fx;
     } else {
@@ -119,3 +134,18 @@ const evaluateIntegral = (variable, start, end, expression, N = 100) => {
   integral *= dx / 3;
   return integral;
 };
+
+
+function evaluateDerivative(variable, expression) {
+  const parsedExpr = convertToEvaluatable(expression);
+  const derived = derivative(parsedExpr, variable);
+
+  // Maybe add functionality to display functions?
+  console.log("Derivative: ", derived.toString());
+
+  try {
+    return derived.compile().evaluate();
+  } catch (error) {
+    return "Error: As of now, only derivatives that are constant can be evaluated"
+  }
+}
