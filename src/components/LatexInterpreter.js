@@ -1,5 +1,5 @@
 
-import { evaluate, derivative, varianceDependencies } from "mathjs";
+import { evaluate, derivative } from "mathjs";
 
 
 const environment = {}; // declaraed variable storage

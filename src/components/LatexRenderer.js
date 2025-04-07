@@ -13,7 +13,7 @@ const LatexRenderer = () => {
         if (!line.trim()) return "";
         const result = evaluateLatexExpression(line);
         if (result === "" || result === undefined) return "";
-        return `= ${result}`;
+        return `= ${result.toFixed(9)}`;
       } catch (error) {
         return "";
       }
