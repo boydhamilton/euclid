@@ -1,4 +1,8 @@
-import { evaluate, derivative } from "mathjs";
+
+import { evaluate, derivative, varianceDependencies } from "mathjs";
+
+
+const environment = {}; // declaraed variable storage
 
 export const convertToEvaluatable = (latex) => {
   let result = latex;
@@ -26,13 +30,6 @@ export const convertToEvaluatable = (latex) => {
     });
   }
 
-  // result = result.replace(/\\sin\s*\(([^)]+)\)/g, "sin($1)");
-  // result = result.replace(/\\cos\s*\(([^)]+)\)/g, "cos($1)");
-  // result = result.replace(/\\tan\s*\(([^)]+)\)/g, "tan($1)");
-  // result = result.replace(/\\csc\s*\(([^)]+)\)/g, "csc($1)");
-  // result = result.replace(/\\sec\s*\(([^)]+)\)/g, "sec($1)");
-  // result = result.replace(/\\cot\s*\(([^)]+)\)/g, "cot($1)");
-
   // multiplication handling
   result = result.replace(/\\cdot/g, "*");
 
@@ -40,6 +37,21 @@ export const convertToEvaluatable = (latex) => {
 };
 
 export const evaluateLatexExpression = (latex) => {
+
+  // variables
+  let declarationmatch = latex.match(/^([a-z]+)\s*=\s*(.+)$/);
+  if (declarationmatch) {
+    let [, variableName, expression] = declarationmatch;
+    try {
+      const evaluatedValue = evaluate(convertToEvaluatable(expression), environment);
+      environment[variableName] = evaluatedValue;
+      return evaluatedValue;
+    } catch (error) {
+      console.error("error evaluating variable declaration:", error);
+      return "";
+    }
+  }
+
   // Match derivative expressions: d/dx f(x)
   let derivativeMatch = latex.match(/d\/d([A-z])\((.*)\)/);
   if (derivativeMatch) {
@@ -71,7 +83,7 @@ export const evaluateLatexExpression = (latex) => {
   // Convert normal math expressions
   try {
     const convertedLine = convertToEvaluatable(latex);
-    return evaluate(convertedLine);
+    return evaluate(convertedLine, environment);
   } catch (error) {
     return "";
   }
@@ -84,7 +96,7 @@ const evaluateSummation = (variable, start, end, expression) => {
   for (let i = start; i <= end; i++) {
     let evalExpr = parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${i})`);
     try{
-        sum += evaluate(evalExpr);
+        sum += evaluate(evalExpr, environment);
     } catch (error){
         return "Error in summation evaluation";
     }
@@ -99,7 +111,7 @@ const evaluateProduct = (variable, start, end, expression) => {
   for (let i = start; i <= end; i++) {
     let evalExpr = parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${i})`);
     try {
-        product *= evaluate(evalExpr);
+        product *= evaluate(evalExpr, environment);
     } catch (error){
         return "Error in product evaluation";
     }
@@ -115,7 +127,7 @@ const evaluateIntegral = (variable, start, end, expression, N = 100) => {
   const evaluateAt = (x) => {
     const evalExpr = parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${x})`);
     try {
-      return evaluate(evalExpr);
+      return evaluate(evalExpr, environment);
     } catch (error) {
       return NaN;
     }
@@ -156,7 +168,7 @@ function evaluateDerivative(variable, expression) {
   console.log("Derivative: ", derived.toString());
 
   try {
-    return derived.compile().evaluate();
+    return derived.compile().evaluate(environment);
   } catch (error) {
     return "Error: As of now, only derivatives that are constant can be evaluated"
   }
