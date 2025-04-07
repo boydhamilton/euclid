@@ -4,26 +4,37 @@ export const convertToEvaluatable = (latex) => {
   let result = latex;
 
   result = result.replace(/\\pi/g, "pi");
-  result = result.replace(/\^{([^}]+)}/g, "^($1)");
 
-  result = result.replace(/\\frac{([^}]+)}{([^}]+)}/g, "($1)/($2)");
-  result = result.replace(/\\sqrt{([^}]+)}/g, "sqrt($1)");
+  result = result.replace(/\^\{([^}]+)\}/g, (_, exp) => {
+    return `^(${convertToEvaluatable(exp)})`;
+  });
 
+  result = result.replace(/\\frac{([^}]+)}{([^}]+)}/g, (_, numerator, denominator) => {
+    return `(${convertToEvaluatable(numerator)})/(${convertToEvaluatable(denominator)})`;
+  });
+
+  result = result.replace(/\\sqrt{([^}]+)}/g, (_, radicand) => {
+    return `sqrt(${convertToEvaluatable(radicand)})`;
+  });
 
   // Replace trig
-  result = result.replace(/\\sin\s*\(([^)]+)\)/g, "sin($1)");
-  result = result.replace(/\\cos\s*\(([^)]+)\)/g, "cos($1)");
-  result = result.replace(/\\tan\s*\(([^)]+)\)/g, "tan($1)");
-  result = result.replace(/\\csc\s*\(([^)]+)\)/g, "(1/sin($1))");
-  result = result.replace(/\\sec\s*\(([^)]+)\)/g, "(1/cos($1))");
-  result = result.replace(/\\cot\s*\(([^)]+)\)/g, "(1/tan($1))");
+  const trigFuncs = ['sin', 'cos', 'tan', 'csc', 'sec', 'cot'];
+  for (const func of trigFuncs) {
+    const regex = new RegExp(`\\\\${func}\\s*\\(([^)]+)\\)`, 'g');
+    result = result.replace(regex, (_, arg) => {
+      return `${func}(${convertToEvaluatable(arg)})`;
+    });
+  }
+
+  // result = result.replace(/\\sin\s*\(([^)]+)\)/g, "sin($1)");
+  // result = result.replace(/\\cos\s*\(([^)]+)\)/g, "cos($1)");
+  // result = result.replace(/\\tan\s*\(([^)]+)\)/g, "tan($1)");
+  // result = result.replace(/\\csc\s*\(([^)]+)\)/g, "csc($1)");
+  // result = result.replace(/\\sec\s*\(([^)]+)\)/g, "sec($1)");
+  // result = result.replace(/\\cot\s*\(([^)]+)\)/g, "cot($1)");
 
   // multiplication handling
   result = result.replace(/\\cdot/g, "*");
-  result = result.replace(/(\d)([A-z])/g, '$1*$2');
-  result = result.replace(/([A-z])(\d)/g, '$1*$2');
-  result = result.replace(/\)\s*(\d+)/g, (match, digits) => `)*${digits}`);
-  result = result.replace(/\)(\d+)/g, (match, digits) => `)*${digits}`);
 
   return result;
 };
@@ -50,6 +61,7 @@ export const evaluateLatexExpression = (latex) => {
     return evaluateProduct(variable, Number(start), Number(end), expression);
   }
 
+  // Match integral expressions: \int_{a}^{b} f(x) dx
   let intMatch = latex.match(/\\int_{([\d.-]+)}\^{([\d.-]+)}\s*(.*)d([a-z])/);
   if (intMatch) {
     let [, start, end, expression, variable] = intMatch;

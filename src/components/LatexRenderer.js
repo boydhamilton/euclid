@@ -12,7 +12,7 @@ const LatexRenderer = () => {
       try {
         if (!line.trim()) return "";
         const result = evaluateLatexExpression(line);
-        if (result === null || result === undefined) return "";
+        if (result === "" || result === undefined) return "";
         return `= ${result}`;
       } catch (error) {
         return "";
