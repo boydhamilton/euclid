@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+
+
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import { evaluateLatexExpression } from "./LatexInterpreter";
@@ -6,20 +8,53 @@ import { evaluateLatexExpression } from "./LatexInterpreter";
 const LatexRenderer = () => {
   const [latexLines, setLatexLines] = useState([""]);
   const [evaluationResults, setEvaluationResults] = useState([]);
+  const [animatedText, setAnimatedText] = useState("");
+
+  const isTypingRef = useRef(false);
 
   const evaluateExpressions = useCallback((lines) => {
+    if (lines.length < 1) return;
+
     const results = lines.map((line) => {
       try {
         if (!line.trim()) return "";
         const result = evaluateLatexExpression(line);
         if (result === "" || result === undefined) return "";
-        return `= ${result.toFixed(9)}`;
+        return `= ${result}`;
       } catch (error) {
         return "";
       }
     });
     setEvaluationResults(results);
   }, []);
+
+  // tutorial
+  useEffect(() => {
+    const allLinesEmpty = latexLines.length === 0 || (latexLines.length === 1 && latexLines[0].trim() === "");
+    if (!allLinesEmpty || isTypingRef.current) return;
+
+    var i = 0;
+    const library = [' \\sum_{i=0}^{10} i', ' \\prod_{j=2}^{8} j \\cdot \\sin(j)', ' \\int_{0}^{9} e^{x} * x^{2} dx', ' \\frac{\\sqrt{a^2 + b^2}}{c}', ' \\lim_{x \\to 0} \\frac{\\sin(x)}{x}'];
+    const randomIndex = Math.floor(Math.random() * library.length);
+    const txt = " "+library[randomIndex]; /* The text */
+    var speed = 40; /* The speed/duration of the effect in milliseconds */
+
+    setAnimatedText("");
+
+    isTypingRef.current = true;
+    function typeWriter() {
+      if (i < txt.length) {
+        setAnimatedText((prev) => prev + txt.charAt(i));
+        i++;
+        setTimeout(typeWriter, speed);
+      }else{
+        isTypingRef.current = false;
+      }
+    }
+
+    typeWriter();
+
+  }, [latexLines]);
 
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -42,7 +77,7 @@ const LatexRenderer = () => {
         return;
       }
 
-      if (!/^[a-zA-Z0-9\\{}._^+\-*/=()\[\] ]$/.test(e.key)) return;
+      if (!/^[a-zA-Z0-9\\{}.,_^+\-*/=()\[\] ]$/.test(e.key)) return;
 
       setLatexLines((prev) => {
         let newLines = [...prev];
@@ -60,19 +95,28 @@ const LatexRenderer = () => {
 
   return (
     <div style={styles.container}>
-      {latexLines.map((line, index) => (
-        <div key={index} style={styles.lineContainer}>
-          <div style={styles.latexContainer}>
-            <BlockMath math={line} />
-          </div>
 
-          {evaluationResults[index] !== "" && 
-          evaluationResults[index] !== null && 
-          evaluationResults[index] !== undefined &&(
-            <div style={styles.resultDisplay}>{evaluationResults[index]}</div>
-          )}
+      {latexLines.length < 1 || (latexLines.length === 1 && latexLines[0] === "") ? (
+        <div style={styles.lineContainer}>
+          <div style={styles.latexContainer}>
+            <p>{animatedText}</p>
+          </div>
         </div>
-      ))}
+      ) : (
+        latexLines.map((line, index) => (
+          <div key={index} style={styles.lineContainer}>
+            <div style={styles.latexContainer}>
+              <BlockMath math={line} />
+            </div>
+  
+            {evaluationResults[index] !== "" && 
+            evaluationResults[index] !== null && 
+            evaluationResults[index] !== undefined && (
+              <div style={styles.resultDisplay}>{evaluationResults[index]}</div>
+            )}
+          </div>
+        ))
+      )}
     </div>
   );
 };
