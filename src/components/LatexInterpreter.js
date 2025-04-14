@@ -119,9 +119,8 @@ const evaluateProduct = (variable, start, end, expression) => {
   return product;
 };
 
-const evaluateIntegral = (variable, start, end, expression, N = 100) => {
-  const dx = (end - start) / N;
-  let integral = 0;
+const evaluateIntegral = (variable, start, end, expression, err = 1e-6) => {
+  
   const parsedExpr = convertToEvaluatable(expression);
 
   const evaluateAt = (x) => {
@@ -136,6 +135,12 @@ const evaluateIntegral = (variable, start, end, expression, N = 100) => {
   if (isNaN(evaluateAt(start)) || isNaN(evaluateAt(end))) {
     return "Error: Cannot evaluate function at integration limits.";
   }
+  // error is legit sooo bad
+  let K = evaluateAt(start) + evaluateAt(end);
+  let N = ((K * (end - start)^5)/(180 * err))^(1/4);
+
+  const dx = (end - start) / N;
+  let integral = 0;
 
   integral += evaluateAt(start);
   integral += evaluateAt(end);
@@ -156,7 +161,7 @@ const evaluateIntegral = (variable, start, end, expression, N = 100) => {
   }
 
   integral *= dx / 3;
-  return integral;
+  return integral.toFixed( Math.max(Math.log10(1/err) - 2, 1));
 };
 
 
