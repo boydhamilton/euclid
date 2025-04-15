@@ -52,12 +52,24 @@ export const evaluateLatexExpression = (latex) => {
     }
   }
 
-  // Match derivative expressions: d/dx f(x)
-  let derivativeMatch = latex.match(/d\/d([A-z])\((.*)\)/);
-  if (derivativeMatch) {
-    let [, variable, expression] = derivativeMatch;
-    return evaluateDerivative(variable, expression);
+
+  // Match derivative expressions: \frac{d}{dx} \Big |_{x=a} f(x)
+  // for evaluation at a point
+  let derivativeAtPointMatch = latex.match(/\\frac{d}{d([a-zA-Z])}(?:\\Big)?\|_{\1=([-\d.]+)}\s*(.+)/);
+  if( derivativeAtPointMatch) {
+    let [, variable, point, expression] = derivativeAtPointMatch;
+    return evaluateDerivativeAtPoint(variable, point, expression);
+  }else{
+    // Match derivative expressions: \frac{d}{dx} f(x)
+    // for const functions
+    let derivativeMatch = latex.match(/\\frac{d}{d([a-zA-Z])}(.+)/);
+    if (derivativeMatch) {
+      let [, variable, expression] = derivativeMatch;
+      return evaluateDerivative(variable, expression);
+    }
   }
+
+  
 
   // Match summation expressions: \sum_{i=a}^{b} f(i)
   let sumMatch = latex.match(/\\sum_{([a-z])=([\d.-]+)}\^{([\d.-]+)}\s*(.*)/);
@@ -136,8 +148,9 @@ const evaluateIntegral = (variable, start, end, expression, err = 1e-6) => {
     return "Error: Cannot evaluate function at integration limits.";
   }
   // error is legit sooo bad
-  let K = evaluateAt(start) + evaluateAt(end);
-  let N = ((K * (end - start)^5)/(180 * err))^(1/4);
+  // let K = evaluateAt(start) + evaluateAt(end);
+  // let N = ((K * (end - start)^5)/(180 * err))^(1/4);
+  let N = 500;
 
   const dx = (end - start) / N;
   let integral = 0;
@@ -161,15 +174,15 @@ const evaluateIntegral = (variable, start, end, expression, err = 1e-6) => {
   }
 
   integral *= dx / 3;
-  return integral.toFixed( Math.max(Math.log10(1/err) - 2, 1));
+  return integral.toFixed(5);
+  //return integral.toFixed( Math.max(Math.log10(1/err) - 2, 1));
 };
 
-
+// const
 function evaluateDerivative(variable, expression) {
   const parsedExpr = convertToEvaluatable(expression);
   const derived = derivative(parsedExpr, variable);
 
-  // Maybe add functionality to display functions?
   console.log("Derivative: ", derived.toString());
 
   try {
@@ -177,4 +190,12 @@ function evaluateDerivative(variable, expression) {
   } catch (error) {
     return "Error: As of now, only derivatives that are constant can be evaluated"
   }
+}
+
+function evaluateDerivativeAtPoint(variable, point, expression) {
+  const parsedExpr = convertToEvaluatable(expression);
+  let dx = 1e-6; // lim -> 0 ahh
+  // lim x -> 0 f(x + h) - f(x) / h
+  let derivativeAtPoint = (evaluateLatexExpression(parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${point} + ${dx})`)) - evaluateLatexExpression(parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${point})`))) / dx;
+  return derivativeAtPoint.toFixed(5);
 }

@@ -10,34 +10,48 @@ const LatexRenderer = () => {
   const [evaluationResults, setEvaluationResults] = useState([]);
   const [animatedText, setAnimatedText] = useState("");
 
+
   const isTypingRef = useRef(false);
 
-  const evaluateExpressions = useCallback((lines) => {
-    if (lines.length < 1) return;
-
-    const results = lines.map((line) => {
-      try {
-        if (!line.trim()) return "";
-        const result = evaluateLatexExpression(line);
-        if (result === "" || result === undefined) return "";
-        return `= ${result}`;
-      } catch (error) {
-        return "";
+  const evaluateLineAtIndex = useCallback((index, line) => {
+    try {
+      if (!line.trim()) {
+        setEvaluationResults((prev) => {
+          const newResults = [...prev];
+          newResults[index] = "";
+          return newResults;
+        });
+        return;
       }
-    });
-    setEvaluationResults(results);
+  
+      const result = evaluateLatexExpression(line);
+      setEvaluationResults((prev) => {
+        const newResults = [...prev];
+        newResults[index] = result === "" || result === undefined ? "" : `= ${result}`;
+        return newResults;
+      });
+    } catch (error) {
+      // Optional: log or show error message
+      setEvaluationResults((prev) => {
+        const newResults = [...prev];
+        newResults[index] = "";
+        return newResults;
+      });
+    }
   }, []);
-
+  
   // tutorial
   useEffect(() => {
     const allLinesEmpty = latexLines.length === 0 || (latexLines.length === 1 && latexLines[0].trim() === "");
     if (!allLinesEmpty || isTypingRef.current) return;
 
     var i = 0;
-    const library = [' \\sum_{i=0}^{10} i', ' \\prod_{j=2}^{8} j \\cdot \\sin(j)', ' \\int_{0}^{9} e^{x} * x^{2} dx', ' \\frac{\\sqrt{a^2 + b^2}}{c}', ' \\lim_{x \\to 0} \\frac{\\sin(x)}{x}'];
+    const library = [' \\sum_{i=0}^{10} i', ' \\prod_{j=2}^{8} j \\cdot \\sin(j)', ' \\int_{0}^{9} e^{x} * x^{2} dx', 
+                    ' \\frac{\\sqrt{a^2 + b^2}}{c}', ' \\lim_{x \\to 0} \\frac{\\sin(x)}{x}'
+                    , ' \\frac{d}{dx}|_{x=0}\\sin(x)'];
     const randomIndex = Math.floor(Math.random() * library.length);
-    const txt = " "+library[randomIndex]; /* The text */
-    var speed = 40; /* The speed/duration of the effect in milliseconds */
+    const txt = " "+library[randomIndex]; 
+    var speed = 40; 
 
     setAnimatedText("");
 
@@ -65,33 +79,39 @@ const LatexRenderer = () => {
             newLines[newLines.length - 1] = newLines[newLines.length - 1].slice(0, -1);
           } else if (newLines.length > 1) {
             newLines.pop();
+            setEvaluationResults((prevResults) => prevResults.slice(0, -1));
           }
-          evaluateExpressions(newLines);
+          evaluateLineAtIndex(newLines.length - 1, newLines[newLines.length - 1]);
           return newLines;
         });
         return;
       }
-
+    
       if (e.key === "Enter") {
-        setLatexLines((prev) => [...prev, ""]);
+        setLatexLines((prev) => {
+          const newLines = [...prev, ""];
+          setEvaluationResults((prevResults) => [...prevResults, ""]);
+          return newLines;
+        });
         return;
       }
-
-      if (!/^[a-zA-Z0-9\\{}.,_^+\-*/=()\[\] ]$/.test(e.key)) return;
-
+    
+      if (!/^[a-zA-Z0-9\\{}.,&|_^+\-*/=()\[\] ]$/.test(e.key)) return;
+    
       setLatexLines((prev) => {
         let newLines = [...prev];
         newLines[newLines.length - 1] += e.key;
-        evaluateExpressions(newLines);
+        evaluateLineAtIndex(newLines.length - 1, newLines[newLines.length - 1]);
         return newLines;
       });
     };
+    
 
     window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [evaluateExpressions]);
+  }, [evaluateLineAtIndex]);
 
   return (
     <div style={styles.container}>
