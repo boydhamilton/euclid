@@ -21,7 +21,7 @@ export const convertToEvaluatable = (latex) => {
     return `sqrt(${convertToEvaluatable(radicand)})`;
   });
 
-  // Replace trig
+  // replace trig
   const trigFuncs = ['sin', 'cos', 'tan', 'csc', 'sec', 'cot'];
   for (const func of trigFuncs) {
     const regex = new RegExp(`\\\\${func}\\s*\\(([^)]+)\\)`, 'g');
@@ -32,6 +32,7 @@ export const convertToEvaluatable = (latex) => {
 
   // multiplication handling
   result = result.replace(/\\cdot/g, "*");
+  // todo: implicit multiplication that works
 
   return result;
 };
@@ -188,13 +189,13 @@ function evaluateDerivative(variable, expression) {
   try {
     return derived.compile().evaluate(environment);
   } catch (error) {
-    return "Error: As of now, only derivatives that are constant can be evaluated"
+    return "Error: If non constant derivative, take derivative at a point with \\frac{d}{dx}|_{x=a} f(x)";
   }
 }
 
 function evaluateDerivativeAtPoint(variable, point, expression) {
   const parsedExpr = convertToEvaluatable(expression);
-  let dx = 1e-6; // lim -> 0 ahh
+  let dx = 1e-8; // lim -> 0 ahh
   // lim x -> 0 f(x + h) - f(x) / h
   let derivativeAtPoint = (evaluateLatexExpression(parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${point} + ${dx})`)) - evaluateLatexExpression(parsedExpr.replace(new RegExp(`\\b${variable}\\b`, "g"), `(${point})`))) / dx;
   return derivativeAtPoint.toFixed(5);

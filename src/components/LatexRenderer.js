@@ -9,6 +9,7 @@ const LatexRenderer = () => {
   const [latexLines, setLatexLines] = useState([""]);
   const [evaluationResults, setEvaluationResults] = useState([]);
   const [animatedText, setAnimatedText] = useState("");
+  const [activeLineIndex, setActiveLineIndex] = useState(0);
 
 
   const isTypingRef = useRef(false);
@@ -71,73 +72,82 @@ const LatexRenderer = () => {
 
   useEffect(() => {
     const handleKeyPress = (e) => {
-      if (e.key === "Backspace") {
-        setLatexLines((prev) => {
-          let newLines = [...prev];
-          if (newLines[newLines.length - 1].length > 0) {
-            newLines[newLines.length - 1] = newLines[newLines.length - 1].slice(0, -1);
-          } else if (newLines.length > 1) {
-            newLines.pop();
-            setEvaluationResults((prevResults) => prevResults.slice(0, -1));
-          }
-          evaluateLineAtIndex(newLines.length - 1, newLines[newLines.length - 1]);
-          return newLines;
-        });
-        return;
-      }
-    
-      if (e.key === "Enter") {
-        setLatexLines((prev) => {
-          const newLines = [...prev, ""];
-          setEvaluationResults((prevResults) => [...prevResults, ""]);
-          return newLines;
-        });
-        return;
-      }
-    
-      if (!/^[a-zA-Z0-9\\{}.,&|_^+\-*/=()\[\] ]$/.test(e.key)) return;
-    
+
       setLatexLines((prev) => {
         let newLines = [...prev];
-        newLines[newLines.length - 1] += e.key;
-        evaluateLineAtIndex(newLines.length - 1, newLines[newLines.length - 1]);
+        let current = activeLineIndex;
+  
+        if (e.key === "Backspace") {
+          if (newLines[current].length > 0) {
+            newLines[current] = newLines[current].slice(0, -1);
+          } else if (newLines.length > 1) {
+            newLines.splice(current, 1);
+            setEvaluationResults((prevResults) => {
+              const updated = [...prevResults];
+              updated.splice(current, 1);
+              return updated;
+            });
+            setActiveLineIndex((i) => Math.max(0, i - 1));
+            return newLines;
+          }
+  
+          evaluateLineAtIndex(current, newLines[current]);
+          return newLines;
+        }
+  
+        if (e.key === "Enter") {
+          newLines.splice(current + 1, 0, "");
+          setEvaluationResults((prevResults) => {
+            const updated = [...prevResults];
+            updated.splice(current + 1, 0, "");
+            return updated;
+          });
+          setActiveLineIndex(current + 1);
+          return newLines;
+        }
+  
+        if (!/^[a-zA-Z0-9\\{}.,&|_^+\-*/=()\[\] ]$/.test(e.key)) return newLines;
+  
+        newLines[current] += e.key;
+        evaluateLineAtIndex(current, newLines[current]);
         return newLines;
       });
     };
-    
-
+  
     window.addEventListener("keydown", handleKeyPress);
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [evaluateLineAtIndex]);
+  }, [activeLineIndex, evaluateLineAtIndex]);
+  
 
   return (
     <div style={styles.container}>
-
       {latexLines.length < 1 || (latexLines.length === 1 && latexLines[0] === "") ? (
         <div style={styles.lineContainer}>
           <div style={styles.latexContainer}>
             <p>{animatedText}</p>
           </div>
         </div>
-      ) : (
-        latexLines.map((line, index) => (
-          <div key={index} style={styles.lineContainer}>
-            <div style={styles.latexContainer}>
-              <BlockMath math={line} />
-            </div>
-  
-            {evaluationResults[index] !== "" && 
-            evaluationResults[index] !== null && 
-            evaluationResults[index] !== undefined && (
-              <div style={styles.resultDisplay}>{evaluationResults[index]}</div>
-            )}
+      ) : latexLines.map((line, index) => (
+        <div
+          key={index}
+          onClick={() => setActiveLineIndex(index)}
+          style={{
+            ...styles.lineContainer,
+            backgroundColor: index === activeLineIndex ? "#eef" : "transparent",
+          }}
+        >
+          <div style={styles.latexWithCursor}>
+            <BlockMath math={line} />
           </div>
-        ))
-      )}
+          {evaluationResults[index] && (
+            <div style={styles.resultDisplay}>{evaluationResults[index]}</div>
+          )}
+        </div>
+      ))}
     </div>
-  );
+  );  
 };
 
 const styles = {
@@ -166,6 +176,11 @@ const styles = {
     border: "1px solid #000",
     backgroundColor: "#fff",
     marginLeft: "20px",
+  },
+  latexWithCursor: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
   },
 };
 
