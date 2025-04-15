@@ -106,7 +106,7 @@ const LatexRenderer = () => {
           return newLines;
         }
   
-        if (!/^[a-zA-Z0-9\\{}.,&|_^+\-*/=()\[\] ]$/.test(e.key)) return newLines;
+        if (!/^[a-zA-Z0-9\\{}.,<>!&|_^+\-*/=()\[\] ]$/.test(e.key)) return newLines;
   
         newLines[current] += e.key;
         evaluateLineAtIndex(current, newLines[current]);
@@ -125,20 +125,24 @@ const LatexRenderer = () => {
     <div style={styles.container}>
       {latexLines.length < 1 || (latexLines.length === 1 && latexLines[0] === "") ? (
         <div style={styles.lineContainer}>
-          <div style={styles.latexContainer}>
+          <div style={styles.animatedText}>
             <p>{animatedText}</p>
           </div>
         </div>
       ) : latexLines.map((line, index) => (
-        <div
-          key={index}
+        <div key={index}
           onClick={() => setActiveLineIndex(index)}
           style={{
             ...styles.lineContainer,
             backgroundColor: index === activeLineIndex ? "#eef" : "transparent",
+            
           }}
         >
-          <div style={styles.latexWithCursor}>
+          <div style={{
+            ...styles.latexWithCursor,
+            paddingBottom: "5px",
+            borderBottom: "2px solid #d3d3d3",}
+            }>
             <BlockMath math={line} />
           </div>
           {evaluationResults[index] && (
@@ -166,10 +170,6 @@ const styles = {
     maxWidth: "600px",
     marginBottom: "10px",
   },
-  latexContainer: {
-    paddingBottom: "5px",
-    borderBottom: "2px solid #d3d3d3",
-  },
   resultDisplay: {
     fontSize: "1.2em",
     padding: "8px",
@@ -181,6 +181,11 @@ const styles = {
     position: "relative",
     display: "flex",
     alignItems: "center",
+  },
+  animatedText: {
+    fontSize: "1.1em",
+    color: "#b84242",
+    padding: "8px",
   },
 };
 

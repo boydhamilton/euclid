@@ -54,7 +54,7 @@ export const evaluateLatexExpression = (latex) => {
   }
 
 
-  // Match derivative expressions: \frac{d}{dx} \Big |_{x=a} f(x)
+  // Match derivative expressions: \frac{d}{dx}\Big|_{x=a} f(x) or without big lol
   // for evaluation at a point
   let derivativeAtPointMatch = latex.match(/\\frac{d}{d([a-zA-Z])}(?:\\Big)?\|_{\1=([-\d.]+)}\s*(.+)/);
   if( derivativeAtPointMatch) {
