@@ -46,9 +46,8 @@ const LatexRenderer = () => {
     if (!allLinesEmpty || isTypingRef.current) return;
 
     var i = 0;
-    const library = [' \\sum_{i=0}^{10} i', ' \\prod_{j=2}^{8} j \\cdot \\sin(j)', ' \\int_{0}^{9} e^{x} * x^{2} dx', 
-                    ' \\frac{\\sqrt{a^2 + b^2}}{c}', ' \\lim_{x \\to 0} \\frac{\\sin(x)}{x}'
-                    , ' \\frac{d}{dx}|_{x=0}\\sin(x)'];
+    const library = [' \\sum_{i=0}^{10} \\sqrt{i}', ' \\prod_{j=2}^{8} j \\cdot \\sin(j)', ' \\int_{0}^{9} e^{x} * x^{2} dx', ' \\frac{d}{dx}|_{x=0}\\sin(x)', 
+      ' \\frac{d}{dx} 2x+1'];
     const randomIndex = Math.floor(Math.random() * library.length);
     const txt = " "+library[randomIndex]; 
     var speed = 40; 
