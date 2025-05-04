@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
-import { evaluateLatexExpression } from "./LatexInterpreter";
+import { evaluateLatex } from "./LatexInterpreter";
 
 const LatexRenderer = () => {
   const [latexLines, setLatexLines] = useState([""]);
@@ -25,7 +25,7 @@ const LatexRenderer = () => {
         return;
       }
   
-      const result = evaluateLatexExpression(line);
+      const result = evaluateLatex(line);
       setEvaluationResults((prev) => {
         const newResults = [...prev];
         newResults[index] = result === "" || result === undefined ? "" : `= ${result}`;
