@@ -5,7 +5,7 @@ const defaultEnv = {};
 
 export function evaluateAST(node, env = defaultEnv) {
   switch (node.type) {
-    case "Number":
+    case "NumberLiteral":
       return Number(node.value);
 
     case "Identifier":
@@ -39,8 +39,6 @@ export function evaluateAST(node, env = defaultEnv) {
       const arg = evaluateAST(node.argument, env);
 
       switch (node.name) {
-        case "frac":
-          return arg.numerator / arg.denominator;
         case "sqrt":
           return Math.sqrt(arg);
         case "sin":
@@ -60,7 +58,7 @@ export function evaluateAST(node, env = defaultEnv) {
       }
     }
 
-    case "Frac": {
+    case "Fraction": {
       const numerator = evaluateAST(node.numerator, env);
       const denominator = evaluateAST(node.denominator, env);
       return numerator / denominator;

@@ -1,5 +1,5 @@
-import { tokenize } from "./Lexer";         
-import { parse } from "./Parser";           
+import tokenize from "./Lexer";         
+import parse from "./Parser";           
 import { evaluateAST } from "./EvaluateAST";
 
 export function evaluateLatex(input, env = {}) {
@@ -12,4 +12,6 @@ export function evaluateLatex(input, env = {}) {
     console.error("Evaluation error:", error.message);
     return `Error: ${error.message}`;
   }
+  
+
 }

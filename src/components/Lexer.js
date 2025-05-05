@@ -43,9 +43,13 @@ const tokenize = (input) => {
     // parentheses
     if (chartype.isOpeningParenthesis(char)){
         tokens.push( { type: "ParenthesisOpen", value: char});
+        cursor++;
+        continue;
     }
     if (chartype.isClosingParenthesis(char)){
         tokens.push( { type: "ParenthesisClose", value: char});
+        cursor++;
+        continue;
     }
 
     //  numbers

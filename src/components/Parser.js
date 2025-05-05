@@ -23,73 +23,68 @@ const parse = (tokens) => {
     };
     const RIGHT_ASSOCIATIVE = ['^'];
 
-
-    const parseExpression = () => {
-        let left = parsePrimary();
-      
-        while (true) {
-          const next = peek();
-      
-          if (!next) break;
-      
-          // inject implicit multiplication
-          if (isImplicitMultiplication(left, next)) {
-            left = {
-              type: "BinaryExpression",
-              operator: "*",
-              left,
-              right: parsePrimary()
-            };
-            continue;
-          }
-      
-          if (next.type === "Operator") {
-            return parseBinaryExpression(left, 0);
-          }
-      
-          break;
-        }
-      
-        return left;
-    };
-
     // check implicit by checking types of adjacent tokens
     const isImplicitMultiplication = (prev, next) => {
-        const isValue = (token) =>
-          ["NumberLiteral", "Identifier", "FunctionCall", "BraceClose", "ParenthesisClose"].includes(token?.type);
+      if(!prev || !next) return false;
       
-        const isStarter = (token) =>
-          ["Identifier", "NumberLiteral", "FunctionCall", "ParenthesisOpen", "BraceOpen"].includes(token?.type);
-      
-        return isValue(prev) && isStarter(next);
+      if (prev.type === "BinaryExpression" || prev.operator === "^") {
+        return false;
+      }
+
+      const isValue = (token) =>
+        ["NumberLiteral", "Identifier", "FunctionCall", "BraceClose", "ParenthesisClose"].includes(token?.type);
+
+      const isStarter = (token) =>
+        ["Identifier", "NumberLiteral", "FunctionCall", "ParenthesisOpen", "BraceOpen"].includes(token?.type);
+
+      return isValue(prev) && isStarter(next);
     };
 
-    const parseBinaryExpression = (left, minPrecedence) => {
-        while (true) {
-          const token = peek();
-          if (!token || token.type !== "Operator") break;
-      
-          const precedence = OP_PRECEDENCE[token.value];
-          if (precedence < minPrecedence) break;
-      
-          const operator = consume().value;
-      
-          let nextMinPrecedence =
-            RIGHT_ASSOCIATIVE.includes(operator) ? precedence : precedence + 1;
-      
-          let right = parsePrimary();
-          right = parseBinaryExpression(right, nextMinPrecedence);
-      
-          left = {
-            type: "BinaryExpression",
-            operator,
-            left,
-            right
-          };
-        }
-      
-        return left;
+    const parseExpression = () => {
+      return parseBinaryExpression(parsePrimary(), 0);
     };
+    
+    const parseBinaryExpression = (left, minPrecedence) => {
+      while (true) {
+        const token = peek();
+        if (!token) break;
+    
+        let operator = null;
+        let isImplicit = false;
+    
+        if (token.type === "BinaryExpression") {
+          operator = token.value;
+        } else if (isImplicitMultiplication(left, token)) {
+          operator = "*";
+          isImplicit = true;
+        }
+    
+        if (!operator) break;
+    
+        const precedence = OP_PRECEDENCE[operator];
+        if (precedence < minPrecedence) break;
+    
+        if (!isImplicit) consume(); // only consume if it's an explicit operator
+    
+        const nextMinPrecedence = RIGHT_ASSOCIATIVE.includes(operator)
+          ? precedence
+          : precedence + 1;
+    
+        let right = parsePrimary();
+        right = parseBinaryExpression(right, nextMinPrecedence);
+    
+        left = {
+          type: "BinaryExpression",
+          operator,
+          left,
+          right
+        };
+      }
+    
+      return left;
+    };
+    
+    
   
     const parsePrimary = () => {
         const token = peek();
@@ -171,11 +166,10 @@ const parse = (tokens) => {
                 integrand
               };
             }
-          
+            
+            // todo i dont think this works
             case "sum": {
               // parse \sum_{i=a}^{b} f(i)
-              // You'll need the full tokens — this could also be its own top-level parse rule.
-              // For now, assume convertLatex has normalized it to \sum{i}{a}{b}{expr}
               expect("BraceOpen");
               const variable = parseExpression();
               expect("BraceClose");
